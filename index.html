@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Class Routine</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Class Routine" />
+<meta name="theme-color" content="#111111" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #f0f0f0; }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #111; }
+
+  .header { background: #111; border-bottom: 0.5px solid #2a2a2a; padding: 1rem 1rem 0; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 20px; font-weight: 700; color: #f0f0f0; }
+  .header p { font-size: 12px; color: #666; margin-top: 2px; }
+
+  .day-tabs { display: flex; gap: 6px; padding: 0.75rem 0 0; overflow-x: auto; scrollbar-width: none; }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab { flex-shrink: 0; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid #333; background: transparent; color: #888; transition: all 0.15s; }
+  .day-tab.active { background: #f0f0f0; color: #111; border-color: transparent; }
+
+  .schedule { padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Normal period card */
+  .period-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 0.9rem 1rem; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .period-card:hover { border-color: #444; }
+  .period-card:active { transform: scale(0.98); }
+
+  .period-num { width: 30px; height: 30px; border-radius: 50%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #888; flex-shrink: 0; }
+  .period-info { flex: 1; min-width: 0; }
+  .period-time { font-size: 11px; color: #555; margin-bottom: 2px; }
+  .period-subject { font-size: 15px; font-weight: 500; color: #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .period-subject.empty { color: #444; font-weight: 400; font-style: italic; }
+  .color-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Lab card */
+  .lab-card { border-radius: 14px; cursor: pointer; overflow: hidden; display: flex; border: 1px solid #3a3000; transition: box-shadow 0.15s; background: #1e1a00; }
+  .lab-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+  .lab-card:active { transform: scale(0.985); }
+  .lab-accent { width: 6px; flex-shrink: 0; }
+  .lab-body { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 5px; }
+  .lab-badge { display: inline-flex; align-items: center; gap: 4px; background: #2e2500; color: #c8940a; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.05em; width: fit-content; }
+  .lab-name { font-size: 17px; font-weight: 700; color: #f0f0f0; }
+  .lab-subject-tag { font-size: 12px; color: #999; }
+  .lab-time-row { font-size: 11px; color: #555; margin-top: 2px; }
+
+  /* Modal */
+  .edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: flex-end; justify-content: center; }
+  .edit-modal.open { display: flex; }
+  .edit-sheet { background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 1.25rem 1.25rem 2.5rem; width: 100%; max-width: 480px; max-height: 82vh; overflow-y: auto; animation: slideUp 0.22s ease; border-top: 0.5px solid #2a2a2a; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .sheet-handle { width: 36px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 1.25rem; }
+  .sheet-title { font-size: 15px; font-weight: 600; margin-bottom: 1.25rem; color: #f0f0f0; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; border: 1px solid #2a2a2a; border-radius: 12px; margin-bottom: 1.1rem; cursor: pointer; user-select: none; background: #111; }
+  .toggle-label { font-size: 14px; font-weight: 500; color: #f0f0f0; }
+  .toggle-sub { font-size: 11px; color: #666; margin-top: 1px; }
+  .toggle-switch { width: 44px; height: 26px; background: #333; border-radius: 13px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-switch.on { background: #f0f0f0; }
+  .toggle-knob { position: absolute; width: 20px; height: 20px; background: #888; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+  .toggle-switch.on .toggle-knob { left: 21px; background: #111; }
+
+  .input-row { margin-bottom: 1.1rem; }
+  .input-row label { font-size: 12px; color: #666; display: block; margin-bottom: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+  .input-row input { width: 100%; padding: 11px 13px; border: 1px solid #2a2a2a; border-radius: 10px; font-size: 15px; background: #111; color: #f0f0f0; font-family: inherit; transition: border-color 0.15s; }
+  .input-row input:focus { outline: none; border-color: #555; }
+
+  .info-box { background: #1e1a00; border: 1px solid #3a3000; border-radius: 10px; padding: 10px 13px; font-size: 12px; color: #c8940a; margin-bottom: 1.1rem; line-height: 1.6; }
+
+  .color-picker { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .color-opt { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: border-color 0.1s, transform 0.1s; }
+  .color-opt:hover { transform: scale(1.1); }
+  .color-opt.selected { border-color: #f0f0f0; }
+
+  .sheet-btns { display: flex; gap: 10px; margin-top: 1.5rem; }
+  .btn-save { flex: 1; padding: 13px; background: #f0f0f0; color: #111; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-cancel { padding: 13px 18px; background: transparent; color: #666; border: 1px solid #333; border-radius: 12px; font-size: 15px; cursor: pointer; font-family: inherit; }
+
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #f0f0f0; color: #111; padding: 10px 20px; border-radius: 24px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <h1>📚 Class Routine</h1>
+    <p id="todayLabel">Tap any period to edit · Lab spans 3 periods</p>
+    <div class="day-tabs" id="dayTabs"></div>
+  </div>
+  <div class="schedule" id="schedule"></div>
+</div>
+
+<div class="edit-modal" id="modal">
+  <div class="edit-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle">Edit period</div>
+
+    <div class="toggle-row" onclick="toggleLab()">
+      <div>
+        <div class="toggle-label">🔬 Lab Class</div>
+        <div class="toggle-sub">Spans 3 consecutive periods (2h 15m)</div>
+      </div>
+      <div class="toggle-switch" id="labToggle"><div class="toggle-knob"></div></div>
+    </div>
+
+    <div id="normalFields">
+      <div class="input-row">
+        <label>Subject name</label>
+        <input type="text" id="subjectInput" placeholder="e.g. Mathematics" />
+      </div>
+      <div class="input-row">
+        <label>Color</label>
+        <div class="color-picker" id="colorPicker"></div>
+      </div>
+    </div>
+
+    <div id="labFields" style="display:none;">
+      <div class="info-box">⚠️ This period + next 2 periods will become one Lab block.</div>
+      <div class="input-row">
+        <label>Lab name</label>
+        <input type="text" id="labNameInput" placeholder="e.g. Physics Lab" />
+      </div>
+      <div class="input-row">
+        <label>Subject / Course</label>
+        <input type="text" id="labSubjectInput" placeholder="e.g. Physics" />
+      </div>
+      <div class="input-row">
+        <label>Color</label>
+        <div class="color-picker" id="labColorPicker"></div>
+      </div>
+    </div>
+
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Saved!</div>
+
+<script>
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday'];
+const PERIODS = 7;
+const START_HOUR = 13, START_MIN = 30, DURATION = 45;
+const COLORS = ['#E24B4A','#D4537E','#7F77DD','#378ADD','#1D9E75','#639922','#BA7517','#D85A30','#888780'];
+
+// Exact data from user screenshots
+const DEFAULT_DATA = [
+  // ── SUNDAY ──
+  // Lab1: Periods 1-3 → Software Lab 2 / 28556 Project Work-1
+  // Period 4 → 28554 Data Communication (blue)
+  // Lab2: Periods 5-7 → DPM Lab / 28553 Computer Architecture & Microprocessor
+  [
+    {isLabStart:true, labName:'Software Lab 2', labSubject:'28556 Project Work-1', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true},
+    {subject:'28554 Data Communication', color:'#378ADD'},
+    {isLabStart:true, labName:'DPM Lab', labSubject:'28553 Computer Architecture & Microprocessor', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true}
+  ],
+
+  // ── MONDAY ──
+  // Lab1: Periods 1-3 → W/D Lab 2 / 28552 Web Design & Development-II
+  // Period 4 → 28555 Operating System (green)
+  // Period 5 → 28551 Application Development Using Java (gray)
+  // Period 6 → 28554 Data Communication (gray)
+  // Period 7 → 25841 Accounting (amber)
+  [
+    {isLabStart:true, labName:'W/D Lab 2', labSubject:'28552 Web Design & Development-II', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true},
+    {subject:'28555 Operating System', color:'#1D9E75'},
+    {subject:'28551 Application Development Using Java', color:'#888780'},
+    {subject:'28554 Data Communication', color:'#888780'},
+    {subject:'25841 Accounting', color:'#BA7517'}
+  ],
+
+  // ── TUESDAY ──
+  // Lab1: Periods 1-3 → Software Lab 2 / 28551 Application Development Using Java
+  // Period 4 → 28552 Web Design & Development-II (gray)
+  // Period 5 → 28553 Computer Architecture & Microprocessor (green)
+  // Period 6 → 28555 Operating System (amber)
+  // Period 7 → 28554 Data Communication (blue)
+  [
+    {isLabStart:true, labName:'Software Lab 2', labSubject:'28551 Application Development Using Java', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true},
+    {subject:'28552 Web Design & Development-II', color:'#888780'},
+    {subject:'28553 Computer Architecture & Microprocessor', color:'#1D9E75'},
+    {subject:'28555 Operating System', color:'#BA7517'},
+    {subject:'28554 Data Communication', color:'#378ADD'}
+  ],
+
+  // ── WEDNESDAY ──
+  // Lab1: Periods 1-3 → Software Lab 2 / 28552 Web Design & Development-II
+  // Period 4 → 28553 Computer Architecture & Microprocessor (amber)
+  // Lab2: Periods 5-7 → IOT Lab / 28555 Operating System
+  [
+    {isLabStart:true, labName:'Software Lab 2', labSubject:'28552 Web Design & Development-II', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true},
+    {subject:'28553 Computer Architecture & Microprocessor', color:'#BA7517'},
+    {isLabStart:true, labName:'IOT Lab', labSubject:'28555 Operating System', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true}
+  ],
+
+  // ── THURSDAY ──
+  // Lab1: Periods 1-3 → Network Lab / 28554 Data Communication
+  // Period 4 → 28553 Computer Architecture & Microprocessor (blue)
+  // Period 5 → 28551 Application Development Using Java (pink)
+  // Period 6 → 25841 Accounting (amber)
+  // Period 7 → No Class (GO HOME) (green)
+  [
+    {isLabStart:true, labName:'Network Lab', labSubject:'28554 Data Communication', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true},
+    {subject:'28553 Computer Architecture & Microprocessor', color:'#378ADD'},
+    {subject:'28551 Application Development Using Java', color:'#D4537E'},
+    {subject:'25841 Accounting', color:'#BA7517'},
+    {subject:'No Class (GO HOME)', color:'#1D9E75'}
+  ]
+];
+
+function fmt(totalMin) {
+  const h = Math.floor(totalMin/60), m = totalMin%60;
+  return `${h>12?h-12:h}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function getPeriodTime(i) {
+  const s = START_HOUR*60+START_MIN+i*DURATION;
+  return `${fmt(s)} – ${fmt(s+DURATION)}`;
+}
+function getLabTime(i) {
+  const s = START_HOUR*60+START_MIN+i*DURATION;
+  return `${fmt(s)} – ${fmt(s+DURATION*3)}`;
+}
+
+let routine = {};
+function getTodayIndex() {
+  const jsDay = new Date().getDay();
+  if (jsDay >= 0 && jsDay <= 4) return jsDay;
+  if (jsDay === 5) return 4;
+  return 0;
+}
+let activeDay = getTodayIndex();
+let editTarget = null;
+let isLabMode = false;
+let selectedColor = COLORS[0];
+let labColor = '#BA7517';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem('classRoutineV4');
+    if (raw) { routine = JSON.parse(raw); return; }
+  } catch(e) {}
+  for (let d = 0; d < 5; d++) routine[d] = JSON.parse(JSON.stringify(DEFAULT_DATA[d]));
+}
+
+function saveData() {
+  try { localStorage.setItem('classRoutineV4', JSON.stringify(routine)); } catch(e) {}
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function renderDayTabs() {
+  document.getElementById('dayTabs').innerHTML = DAYS.map((d,i) =>
+    `<button class="day-tab${i===activeDay?' active':''}" onclick="switchDay(${i})">${d}</button>`
+  ).join('');
+
+  const jsDay = new Date().getDay();
+  const isClassDay = jsDay >= 0 && jsDay <= 4;
+  const dayName = DAYS[activeDay];
+  document.getElementById('todayLabel').textContent = isClassDay
+    ? `Today is ${dayName} · Tap any period to edit`
+    : `Weekend · Showing ${dayName} · Tap any period to edit`;
+}
+
+function renderSchedule() {
+  const day = routine[activeDay];
+  let html = '';
+  let i = 0;
+  while (i < PERIODS) {
+    const p = day[i];
+    if (p.isLabContinue) { i++; continue; }
+    if (p.isLabStart) {
+      // find end of lab
+      let end = i+2;
+      html += `
+        <div class="lab-card" onclick="openEdit(${i})">
+          <div class="lab-accent" style="background:${p.color||'#BA7517'}"></div>
+          <div class="lab-body">
+            <div class="lab-badge">⚗️ LAB · Periods ${i+1}–${end+1}</div>
+            <div class="lab-name">${p.labName||'Lab Class'}</div>
+            ${p.labSubject?`<div class="lab-subject-tag">${p.labSubject}</div>`:''}
+            <div class="lab-time-row">${getLabTime(i)} &nbsp;·&nbsp; 2 hrs 15 min</div>
+          </div>
+        </div>`;
+      i += 3;
+    } else {
+      html += `
+        <div class="period-card" onclick="openEdit(${i})">
+          <div class="period-num">${i+1}</div>
+          <div class="period-info">
+            <div class="period-time">${getPeriodTime(i)}</div>
+            <div class="period-subject${p.subject?'':' empty'}">${p.subject||'Tap to add subject'}</div>
+          </div>
+          <div class="color-dot" style="background:${p.color||'#555'}"></div>
+        </div>`;
+      i++;
+    }
+  }
+  document.getElementById('schedule').innerHTML = html;
+}
+
+function switchDay(i) { activeDay=i; renderDayTabs(); renderSchedule(); }
+
+function openEdit(idx) {
+  editTarget = idx;
+  const p = routine[activeDay][idx];
+  isLabMode = !!p.isLabStart;
+
+  document.getElementById('labToggle').classList.toggle('on', isLabMode);
+  document.getElementById('normalFields').style.display = isLabMode ? 'none' : 'block';
+  document.getElementById('labFields').style.display = isLabMode ? 'block' : 'none';
+  document.getElementById('sheetTitle').textContent = `Period ${idx+1} · ${getPeriodTime(idx)}`;
+
+  if (isLabMode) {
+    document.getElementById('labNameInput').value = p.labName||'';
+    document.getElementById('labSubjectInput').value = p.labSubject||'';
+    labColor = p.color||'#BA7517';
+    renderLabColorPicker();
+  } else {
+    document.getElementById('subjectInput').value = p.subject||'';
+    selectedColor = p.color||COLORS[0];
+    renderColorPicker();
+  }
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => (isLabMode ? document.getElementById('labNameInput') : document.getElementById('subjectInput')).focus(), 150);
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); editTarget=null; }
+
+function toggleLab() {
+  isLabMode = !isLabMode;
+  document.getElementById('labToggle').classList.toggle('on', isLabMode);
+  document.getElementById('normalFields').style.display = isLabMode ? 'none' : 'block';
+  document.getElementById('labFields').style.display = isLabMode ? 'block' : 'none';
+  if (isLabMode) renderLabColorPicker(); else renderColorPicker();
+}
+
+function saveEdit() {
+  if (editTarget===null) return;
+  const day = routine[activeDay];
+  if (day[editTarget].isLabStart) {
+    for (let k=1; k<=2; k++) {
+      if (editTarget+k < PERIODS) day[editTarget+k] = {subject:'',color:'#888780'};
+    }
+  }
+  if (isLabMode) {
+    if (editTarget+2 >= PERIODS) { alert('Not enough periods left for a 3-period lab here!'); return; }
+    day[editTarget] = { isLabStart:true, labName:document.getElementById('labNameInput').value.trim(), labSubject:document.getElementById('labSubjectInput').value.trim(), color:labColor };
+    day[editTarget+1] = { isLabContinue:true };
+    day[editTarget+2] = { isLabContinue:true };
+  } else {
+    day[editTarget] = { subject:document.getElementById('subjectInput').value.trim(), color:selectedColor };
+  }
+  saveData(); closeModal(); renderSchedule();
+}
+
+function renderColorPicker() {
+  document.getElementById('colorPicker').innerHTML = COLORS.map(c =>
+    `<div class="color-opt${c===selectedColor?' selected':''}" style="background:${c}" onclick="pickColor('${c}')"></div>`).join('');
+}
+function renderLabColorPicker() {
+  document.getElementById('labColorPicker').innerHTML = COLORS.map(c =>
+    `<div class="color-opt${c===labColor?' selected':''}" style="background:${c}" onclick="pickLabColor('${c}')"></div>`).join('');
+}
+function pickColor(c) { selectedColor=c; renderColorPicker(); }
+function pickLabColor(c) { labColor=c; renderLabColorPicker(); }
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('modal')) closeModal();
+});
+
+loadData(); renderDayTabs(); renderSchedule();
+
+// Register Service Worker for offline use
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(() => console.log('Service Worker registered ✅'))
+    .catch(err => console.log('SW error:', err));
+}
+</script>
+</body>
+</html>
+
+
+
+
