@@ -13,8 +13,8 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #f0f0f0; }
-  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #111; }
-
+  html, body { background: #111; min-height: 100%; }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; background: #111; display: flex; flex-direction: column; }
   .header { background: #111; border-bottom: 0.5px solid #2a2a2a; padding: 1rem 1rem 0; position: sticky; top: 0; z-index: 10; }
   .header h1 { font-size: 20px; font-weight: 700; color: #f0f0f0; }
   .header p { font-size: 12px; color: #666; margin-top: 2px; }
@@ -84,6 +84,15 @@
 
   .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #f0f0f0; color: #111; padding: 10px 20px; border-radius: 24px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
   .toast.show { opacity: 1; }
+  /* Footer */
+  .footer { text-align: center; padding: 1.5rem 1rem 2.2rem; }
+  .footer-line { width: 48px; height: 2px; margin: 0 auto 14px; border-radius: 2px; background: linear-gradient(90deg, transparent, #555, transparent); }
+  .footer-text { font-size: 11px; color: #666; letter-spacing: 0.12em; text-transform: uppercase; }
+  .footer-name { display: block; margin-top: 5px; font-family: Georgia, serif; font-size: 16px; font-style: italic; font-weight: 600; letter-spacing: 0.05em; background: linear-gradient(90deg, #f0f0f0, #777, #f0f0f0); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shine 4s linear infinite; }
+  .footer-star { color: #444; font-size: 10px; margin-top: 8px; letter-spacing: 6px; }
+  .footer { text-align: center; padding: 0.4rem 1rem 1.2rem; }
+  .footer { margin-top: auto; text-align: center; padding: 1.5rem 1rem 1.6rem; }
+  @keyframes shine { to { background-position: 200% center; } }  
 </style>
 </head>
 <body>
@@ -94,6 +103,13 @@
     <div class="day-tabs" id="dayTabs"></div>
   </div>
   <div class="schedule" id="schedule"></div>
+  
+  <div class="footer">
+    <div class="footer-line"></div>
+    <div class="footer-text">crafted by</div>
+    <span class="footer-name">Abdullah Al Mahi</span>
+    <div class="footer-star">✦ ✦ ✦</div>
+  </div>  
 </div>
 
 <div class="edit-modal" id="modal">
@@ -145,93 +161,87 @@
 
 <div class="toast" id="toast">✓ Saved!</div>
 
-
-<div style="text-align:center;  padding: 0.1rem 0; color:#888; font-size:12px; font-style:italic; font-family: Georgia, serif; letter-spacing:0.03em;">
-  crafted by MD Abdullah Al Mahi
-</div>
-
 <script>
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday'];
 const PERIODS = 7;
 const START_HOUR = 13, START_MIN = 30, DURATION = 45;
 const COLORS = ['#E24B4A','#D4537E','#7F77DD','#378ADD','#1D9E75','#639922','#BA7517','#D85A30','#888780'];
 
-// Exact data from user screenshots
+// Data from the new routine picture
 const DEFAULT_DATA = [
   // ── SUNDAY ──
-  // Lab1: Periods 1-3 → Software Lab 2 / 28556 Project Work-1
-  // Period 4 → 28554 Data Communication (blue)
-  // Lab2: Periods 5-7 → DPM Lab / 28553 Computer Architecture & Microprocessor
+  // Lab1: Periods 1-3 → Hardware Lab / 28563 -  Sensor & IOT System
+  // Period 4 → 25852 -  Industrial Management
+  // Lab2: Periods 5-7 → DMP Lab / 28564 - Microcontroller Based System Design & Development
   [
-    {isLabStart:true, labName:'Software Lab 2', labSubject:'28556 Project Work-1', color:'#BA7517'},
+    {isLabStart:true, labName:'Hardware Lab', labSubject:'28563 -  Sensor & IOT System', color:'#BA7517'},
     {isLabContinue:true},
     {isLabContinue:true},
-    {subject:'28554 Data Communication', color:'#378ADD'},
-    {isLabStart:true, labName:'DPM Lab', labSubject:'28553 Computer Architecture & Microprocessor', color:'#BA7517'},
+    {subject:'25852 -  Industrial Management', color:'#D85A30'},
+    {isLabStart:true, labName:'DMP Lab', labSubject:'28564 - Microcontroller Based System Design & Development', color:'#BA7517'},
     {isLabContinue:true},
     {isLabContinue:true}
   ],
 
   // ── MONDAY ──
-  // Lab1: Periods 1-3 → W/D Lab 2 / 28552 Web Design & Development-II
-  // Period 4 → 28555 Operating System (green)
-  // Period 5 → 28551 Application Development Using Java (gray)
-  // Period 6 → 28554 Data Communication (gray)
-  // Period 7 → 25841 Accounting (amber)
+  // Lab1: Periods 1-3 → Network Lab / 28565 - Surveillance Security System
+  // Period 4 → 28564 - Microcontroller Based System Design & Development
+  // Period 5 → 28562 - Computer Networking
+  // Period 6 → 25851 - Principles of Marketing
+  // (Period 7 → no class)
   [
-    {isLabStart:true, labName:'W/D Lab 2', labSubject:'28552 Web Design & Development-II', color:'#BA7517'},
+    {isLabStart:true, labName:'Network Lab', labSubject:'28565 - Surveillance Security System', color:'#BA7517'},
     {isLabContinue:true},
     {isLabContinue:true},
-    {subject:'28555 Operating System', color:'#1D9E75'},
-    {subject:'28551 Application Development Using Java', color:'#888780'},
-    {subject:'28554 Data Communication', color:'#888780'},
-    {subject:'25841 Accounting', color:'#BA7517'}
+    {subject:'28564 - Microcontroller Based System Design & Development', color:'#7F77DD'},
+    {subject:'28562 - Computer Networking', color:'#378ADD'},
+    {subject:'25851 - Principles of Marketing', color:'#888780'}
   ],
 
   // ── TUESDAY ──
-  // Lab1: Periods 1-3 → Software Lab 2 / 28551 Application Development Using Java
-  // Period 4 → 28552 Web Design & Development-II (gray)
-  // Period 5 → 28553 Computer Architecture & Microprocessor (green)
-  // Period 6 → 28555 Operating System (amber)
-  // Period 7 → 28554 Data Communication (blue)
+  // Lab1: Periods 1-3 → IoT Lab / 28561 - Database Management System
+  // Period 4 → 28565 - Surveillance Security System
+  // Lab2: Periods 5-7 → Web Design Lab / 28566 - Web Development Project
   [
-    {isLabStart:true, labName:'Software Lab 2', labSubject:'28551 Application Development Using Java', color:'#BA7517'},
+    {isLabStart:true, labName:'IoT Lab', labSubject:'28561 - Database Management System', color:'#BA7517'},
     {isLabContinue:true},
     {isLabContinue:true},
-    {subject:'28552 Web Design & Development-II', color:'#888780'},
-    {subject:'28553 Computer Architecture & Microprocessor', color:'#1D9E75'},
-    {subject:'28555 Operating System', color:'#BA7517'},
-    {subject:'28554 Data Communication', color:'#378ADD'}
-  ],
-
-  // ── WEDNESDAY ──
-  // Lab1: Periods 1-3 → Software Lab 2 / 28552 Web Design & Development-II
-  // Period 4 → 28553 Computer Architecture & Microprocessor (amber)
-  // Lab2: Periods 5-7 → IOT Lab / 28555 Operating System
-  [
-    {isLabStart:true, labName:'Software Lab 2', labSubject:'28552 Web Design & Development-II', color:'#BA7517'},
-    {isLabContinue:true},
-    {isLabContinue:true},
-    {subject:'28553 Computer Architecture & Microprocessor', color:'#BA7517'},
-    {isLabStart:true, labName:'IOT Lab', labSubject:'28555 Operating System', color:'#BA7517'},
+    {subject:'28565 - Surveillance Security System', color:'#E24B4A'},
+    {isLabStart:true, labName:'Web Design Lab', labSubject:'28566 - Web Development Project', color:'#BA7517'},
     {isLabContinue:true},
     {isLabContinue:true}
   ],
 
-  // ── THURSDAY ──
-  // Lab1: Periods 1-3 → Network Lab / 28554 Data Communication
-  // Period 4 → 28553 Computer Architecture & Microprocessor (blue)
-  // Period 5 → 28551 Application Development Using Java (pink)
-  // Period 6 → 25841 Accounting (amber)
-  // Period 7 → No Class (GO HOME) (green)
+  // ── WEDNESDAY ──
+  // Lab1: Periods 1-3 → Network Lab / 28562 - Computer Networking
+  // Period 4 → 28564 - Microcontroller Based System Design & Development
+  // Period 5 → 25852 -  Industrial Management
+  // Period 6 → 28563 -  Sensor & IOT System
+  // Period 7 → 28561 - Database Management System
   [
-    {isLabStart:true, labName:'Network Lab', labSubject:'28554 Data Communication', color:'#BA7517'},
+    {isLabStart:true, labName:'Network Lab', labSubject:'28562 - Computer Networking', color:'#BA7517'},
     {isLabContinue:true},
     {isLabContinue:true},
-    {subject:'28553 Computer Architecture & Microprocessor', color:'#378ADD'},
-    {subject:'28551 Application Development Using Java', color:'#D4537E'},
-    {subject:'25841 Accounting', color:'#BA7517'},
-    {subject:'No Class (GO HOME)', color:'#1D9E75'}
+    {subject:'28564 - Microcontroller Based System Design & Development', color:'#7F77DD'},
+    {subject:'25852 -  Industrial Management', color:'#D85A30'},
+    {subject:'28563 -  Sensor & IOT System', color:'#D4537E'},
+    {subject:'28561 - Database Management System', color:'#1D9E75'}
+  ],
+
+  // ── THURSDAY ──
+  // Period 1 → 28562 - Computer Networking
+  // Period 2 → 25851 - Principles of Marketing
+  // Period 3 → 28561 - Database Management System
+  // Period 4 → 28563 -  Sensor & IOT System
+  // Lab: Periods 5-7 → Software Lab-1 / 28564 - Microcontroller Based System Design & Development
+  [
+    {subject:'28562 - Computer Networking', color:'#378ADD'},
+    {subject:'25851 - Principles of Marketing', color:'#888780'},
+    {subject:'28561 - Database Management System', color:'#1D9E75'},
+    {subject:'28563 -  Sensor & IOT System', color:'#D4537E'},
+    {isLabStart:true, labName:'Software Lab-1', labSubject:'28564 - Microcontroller Based System Design & Development', color:'#BA7517'},
+    {isLabContinue:true},
+    {isLabContinue:true}
   ]
 ];
 
@@ -263,14 +273,14 @@ let labColor = '#BA7517';
 
 function loadData() {
   try {
-    const raw = localStorage.getItem('classRoutineV4');
+    const raw = localStorage.getItem('classRoutineV5');
     if (raw) { routine = JSON.parse(raw); return; }
   } catch(e) {}
   for (let d = 0; d < 5; d++) routine[d] = JSON.parse(JSON.stringify(DEFAULT_DATA[d]));
 }
 
 function saveData() {
-  try { localStorage.setItem('classRoutineV4', JSON.stringify(routine)); } catch(e) {}
+  try { localStorage.setItem('classRoutineV5', JSON.stringify(routine)); } catch(e) {}
   const t = document.getElementById('toast');
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 1800);
@@ -295,6 +305,7 @@ function renderSchedule() {
   let i = 0;
   while (i < PERIODS) {
     const p = day[i];
+    if (!p) { i++; continue; } // no class in this period
     if (p.isLabContinue) { i++; continue; }
     if (p.isLabStart) {
       // find end of lab
@@ -401,9 +412,11 @@ loadData(); renderDayTabs(); renderSchedule();
 // Register Service Worker for offline use
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js')
+  navigator.serviceWorker.register('sw.js')
     .then(() => console.log('Service Worker registered ✅'))
     .catch(err => console.log('SW error:', err));
 }
 </script>
 </body>
 </html>
+
